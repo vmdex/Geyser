@@ -254,9 +254,15 @@ public class BlockBreakHandler {
                         continue;
                     }
 
-                    // At this point it's safe to assume that we won't get subsequent block actions on this position
-                    // so reset it and return since we've already broken the block
+                    // Java may have already corrected a denied instant break before Bedrock predicts its destruction.
+                    // Resend the current block after that late prediction without issuing another Java break request.
                     if (Objects.equals(lastMinedPosition, position)) {
+                        if (session.isInstabuild()) {
+                            BlockState actualState = session.getGeyser().getWorldManager().blockAt(session, position);
+                            if (!actualState.is(Blocks.AIR)) {
+                                BlockUtils.restoreCorrectBlock(session, position, actualState);
+                            }
+                        }
                         lastMinedPosition = null;
                         continue;
                     }
